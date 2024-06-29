@@ -1,11 +1,27 @@
-// subscriptionRoutes.js
 const express = require("express");
 const router = express.Router();
+const authMiddleware = require("../Middleware/authMiddleware");
+const {
+  getSubscriptions,
+  createSubscription,
+  updateSubscription,
+  deleteSubscription,
+} = require("../Models/Subscription");
+const { body, validationResult } = require("express-validator");
+const bcrypt = require("bcrypt");
+const session = require("express-session");
 
-// Mock database (replace with actual database integration)
-let subscriptions = [];
+// Session configuration
+router.use(
+  session({
+    secret: "your-secret-key",
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }, // Adjust secure flag based on your deployment
+  })
+);
 
-// GET /subscriptions/plans - Retrieve available subscription plans
+// GET /api/subscriptions/plans - Retrieve available subscription plans
 router.get("/plans", (req, res) => {
   // Example: Return predefined subscription plans (mock implementation)
   const plans = [
@@ -16,50 +32,71 @@ router.get("/plans", (req, res) => {
   res.json(plans);
 });
 
-// POST /subscriptions - Subscribe to a plan
-router.post("/", (req, res) => {
-  const { userId, planId } = req.body;
-  // Example: Create new subscription (mock implementation)
-  const newSubscription = { id: subscriptions.length + 1, userId, planId };
-  subscriptions.push(newSubscription);
-  res.json(newSubscription);
-});
-
-// GET /subscriptions - Retrieve current subscription details
-router.get("/", (req, res) => {
-  const userId = req.query.userId; // Assuming userId is passed as query parameter
-  // Example: Fetch user's current subscription (mock implementation)
-  const subscription = subscriptions.find((sub) => sub.userId === userId);
-  if (subscription) {
-    res.json(subscription);
-  } else {
-    res.status(404).json({ message: "Subscription not found" });
+// GET /api/subscriptions - Retrieve user's subscriptions
+router.get("/", authMiddleware, async (req, res) => {
+  try {
+    const subscriptions = await getSubscriptions(req.session.userId);
+    res.json(subscriptions);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
-// PUT /subscriptions - Update subscription plan
-router.put("/", (req, res) => {
-  const { userId, planId } = req.body;
-  // Example: Update user's subscription plan (mock implementation)
-  const index = subscriptions.findIndex((sub) => sub.userId === userId);
-  if (index !== -1) {
-    subscriptions[index].planId = planId;
-    res.json(subscriptions[index]);
-  } else {
-    res.status(404).json({ message: "Subscription not found" });
+// POST /api/subscriptions - Subscribe to a plan
+router.post("/", authMiddleware, async (req, res) => {
+  const { planId } = req.body;
+  try {
+    const subscription = await createSubscription(req.session.userId, planId);
+    res.status(201).json(subscription);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
-// DELETE /subscriptions - Cancel subscription
-router.delete("/", (req, res) => {
-  const userId = req.query.userId; // Assuming userId is passed as query parameter
-  // Example: Cancel user's subscription (mock implementation)
-  const index = subscriptions.findIndex((sub) => sub.userId === userId);
-  if (index !== -1) {
-    subscriptions.splice(index, 1);
+// PUT /api/subscriptions/:id - Update subscription plan
+router.put("/:id", authMiddleware, async (req, res) => {
+  const { planId } = req.body;
+  try {
+    const subscription = await updateSubscription(
+      req.params.id,
+      req.session.userId,
+      planId
+    );
+    if (subscription) {
+      res.json(subscription);
+    } else {
+      res.status(404).json({ message: "Subscription not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DELETE /api/subscriptions/:id - Cancel subscription
+router.delete("/:id", authMiddleware, async (req, res) => {
+  try {
+    await deleteSubscription(req.params.id, req.session.userId);
     res.json({ message: "Subscription cancelled successfully" });
-  } else {
-    res.status(404).json({ message: "Subscription not found" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/subscriptions/store-plan - Store selected plan in database
+router.post("/store-plan", authMiddleware, async (req, res) => {
+  const { planId } = req.body;
+
+  try {
+    // Insert subscription into the database (example code using mock function)
+    const subscription = await createSubscription(req.session.userId, planId);
+    if (subscription) {
+      res.status(200).json({ message: "Selected plan stored successfully." });
+    } else {
+      res.status(500).json({ error: "Failed to store selected plan." });
+    }
+  } catch (error) {
+    console.error("Error storing plan:", error);
+    res.status(500).json({ error: "Failed to store selected plan." });
   }
 });
 

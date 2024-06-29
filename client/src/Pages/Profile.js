@@ -1,95 +1,86 @@
 import React, { useState } from "react";
+import axios from "axios";
+import Login from "./Login";
+import Register from "./Register";
 
 const Profile = () => {
-  // Mock user data (replace with actual user data or fetch from backend)
-  const [user, setUser] = useState({
-    id: 1,
-    username: "example_user",
-    email: "user@example.com",
-    // Add other user information as needed
-  });
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [loginSuccessMessage, setLoginSuccessMessage] = useState("");
 
-  // State for form inputs
-  const [formData, setFormData] = useState({
-    username: user.username,
-    email: user.email,
-    // Add other form fields as needed
-  });
-
-  // Handle form input changes
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleLogin = async (username, password) => {
+    try {
+      const response = await axios.post("http://localhost:5000/auth/login", {
+        username,
+        password,
+      });
+      console.log("Login response:", response.data);
+      setUserData(response.data.user); // Assuming backend returns user data
+      setIsLoggedIn(true);
+      setLoginSuccessMessage("Login successful! Welcome to your profile.");
+    } catch (error) {
+      console.error("Error logging in:", error);
+      setLoginSuccessMessage("");
+    }
   };
 
-  // Handle form submission (update profile)
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Update profile logic (replace with actual update logic)
-    console.log("Form submitted with:", formData);
-    // Example: Call backend API to update user profile
-    // fetch('/api/profile', {
-    //   method: 'PUT',
-    //   body: JSON.stringify(formData),
-    //   headers: {
-    //     'Content-Type': 'application/json'
-    //   }
-    // })
-    // .then(response => response.json())
-    // .then(data => {
-    //   // Handle success or error
-    //   console.log('Profile updated successfully:', data);
-    // })
-    // .catch(error => {
-    //   console.error('Error updating profile:', error);
-    // });
+  const handleRegister = async (username, email, password) => {
+    try {
+      const response = await axios.post("http://localhost:5000/auth/register", {
+        username,
+        email,
+        password,
+      });
+      console.log("Register response:", response.data);
+      setUserData(response.data.user); // Assuming backend returns user data
+      setIsLoggedIn(true);
+      setLoginSuccessMessage(
+        "Registration successful! Welcome to your profile."
+      );
+    } catch (error) {
+      console.error("Error registering:", error);
+    }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setUserData(null);
+    setLoginSuccessMessage("");
+  };
+
+  const handleToggleForm = () => {
+    setShowRegisterForm(!showRegisterForm);
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-4xl font-bold mb-4">Profile</h1>
-      <form onSubmit={handleSubmit} className="max-w-md">
-        <div className="mb-4">
-          <label
-            htmlFor="username"
-            className="block text-lg font-medium text-gray-700"
-          >
-            Username
-          </label>
-          <input
-            type="text"
-            id="username"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-lg"
-            required
-          />
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="w-full max-w-md px-4 py-8 bg-white shadow-md rounded-md">
+        <h2 className="text-2xl font-semibold mb-2">
+          {isLoggedIn ? loginSuccessMessage : ""}
+        </h2>
+        <div>
+          <h1 className="text-3xl font-bold text-center mb-6">
+            {showRegisterForm ? "Register" : "Login"}
+          </h1>
+          {showRegisterForm ? (
+            <Register onRegister={handleRegister} />
+          ) : (
+            <Login
+              onLogin={handleLogin}
+              loginSuccessMessage={loginSuccessMessage}
+            />
+          )}
+          <div className="flex justify-center mt-4">
+            <button
+              onClick={handleToggleForm}
+              className="text-blue-500 hover:text-blue-600 font-medium focus:outline-none"
+            >
+              {showRegisterForm ? "Login" : "Register"} instead
+            </button>
+          </div>
         </div>
-        <div className="mb-4">
-          <label
-            htmlFor="email"
-            className="block text-lg font-medium text-gray-700"
-          >
-            Email Address
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-lg"
-            required
-          />
-        </div>
-        {/* Add more fields for additional user information */}
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-        >
-          Update Profile
-        </button>
-      </form>
+      </div>
     </div>
   );
 };

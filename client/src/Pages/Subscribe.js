@@ -1,5 +1,6 @@
 import React from "react";
 import subscriptionPlans from "../Data/plans";
+import PaymentButton from "./PaymentButton";
 
 const Subscribe = () => {
   return (
@@ -18,9 +19,7 @@ const Subscribe = () => {
                 </li>
               ))}
             </ul>
-            <button className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 mt-4 rounded">
-              Select Plan
-            </button>
+            <PaymentButton planId={plan.id} />
           </div>
         ))}
       </div>
