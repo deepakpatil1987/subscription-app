@@ -22,6 +22,7 @@ const App = () => {
             element={<SubscriptionManagement />}
           />
           <Route path="/profile" element={<Profile />} />{" "}
+          <Route path="/home/:sessionId" element={<Home />} />
           {/* Add route for Profile component */}
           {/* Define other routes here */}
         </Routes>
